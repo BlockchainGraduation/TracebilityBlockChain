@@ -15,6 +15,13 @@ contract MarketPlace{
         uint quantity;
         address buyer;
     }
+
+    struct OrderID{
+        string productId;
+        string orderId;
+        address orderBy;
+    }
+    
     mapping (address => Product[]) public listProduct;
     mapping (address=>uint) countProdct;
     mapping (address => Transaction[]) public historyTransaction;
