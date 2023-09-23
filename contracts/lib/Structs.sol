@@ -15,7 +15,7 @@ struct FarmerInfo{
 
 struct ManufacturerInfo{
     string id;
-    address Manufacturer_ad;
+    address manufacturer_ad;
 }
 
 struct ProductInfo{
@@ -30,22 +30,18 @@ struct ProductInfo{
     SupplyChainLib.ProductStatus status;
 }
 
-struct InfoTransaction_SF {
-        string id;
-        address farmer_address;
-        uint created_at;
-    }
+struct InfoTransaction {
+    string id;
+    string product_id;
+    uint quantity;
+    uint created_at;
+    address buyer;
+}
 
-struct InfoTransaction_FM{
-        string id;
-        address manufacturer_ad;
-        uint created_at;
-    }  
-
-struct InfoTransDetail {
-        string id;
-        string trans_id;
-        string product_id;
-        uint quantity;
-        uint created_at;
-    }
+struct OrderID{
+    string id;
+    string product_id;
+    address created_by;
+    uint created_at;
+    SupplyChainLib.OrderStatus status;
+}

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "../lib/Structs.sol";
 
 interface IFarmer {
-    function create(string memory id) external returns(FarmerInfo memory);
+    function create(string memory id, address ad_farmer) external returns(FarmerInfo memory);
     function get_farmer_by_address(address address_farmer) external view returns (FarmerInfo memory);
     function get_farmer_by_id(string memory id) external  view returns (FarmerInfo memory);
     function get_list_farmer() external view returns (FarmerInfo[] memory);
@@ -18,11 +18,11 @@ contract Farmer is IFarmer{
     mapping (string => FarmerInfo) farmers_ms;
     FarmerInfo[] list_farmer;
 
-    function create(string memory id) public returns(FarmerInfo memory) {
-        farmers[msg.sender] = FarmerInfo(id, msg.sender);
-        list_farmer.push(farmers[msg.sender]);
-        farmers_ms[id] = farmers[msg.sender];
-        return farmers[msg.sender];
+    function create(string memory id, address ad_farmer) public returns(FarmerInfo memory) {
+        farmers[ad_farmer] = FarmerInfo(id, ad_farmer);
+        list_farmer.push(farmers[ad_farmer]);
+        farmers_ms[id] = farmers[ad_farmer];
+        return farmers[ad_farmer];
     }
 
     function get_farmer_by_address(address address_farmer) public  view returns (FarmerInfo memory){
