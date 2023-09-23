@@ -3,19 +3,9 @@ pragma solidity ^0.8.0;
 
 import "./SupplyChainLib.sol";
 
-struct CompanyInfo{
+struct ActorInfo{
     string id;
     address owner;
-}
-
-struct FarmerInfo{
-    string id;
-    address farmer_ad;
-}
-
-struct ManufacturerInfo{
-    string id;
-    address manufacturer_ad;
 }
 
 struct ProductInfo{
@@ -25,8 +15,8 @@ struct ProductInfo{
     uint quantity;
     uint created_at;
     uint updated_at;
-    address owner;
-    string trans_detail_id;
+    string owner_id;
+    string transaction_id;
     SupplyChainLib.ProductStatus status;
 }
 
@@ -35,13 +25,20 @@ struct InfoTransaction {
     string product_id;
     uint quantity;
     uint created_at;
-    address buyer;
+    string buyer_id;
 }
 
 struct OrderID{
     string id;
     string product_id;
-    address created_by;
+    string created_by;
     uint created_at;
+    SupplyChainLib.OrderStatus status;
+}
+
+struct MarketplaceItem {
+    string itemId;
+    string product_id;
+    string owner_id;
     SupplyChainLib.OrderStatus status;
 }

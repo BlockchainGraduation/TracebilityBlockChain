@@ -7,6 +7,7 @@ import "./manufacturer/Manufacturer.sol";
 import "./seed/SeedlingCompany.sol";
 import "./transaction/Transaction.sol";
 import "./lib/Structs.sol";
+import "./Marketplace.sol";
 
 contract SupplyChain{
     IProduct product;
@@ -15,6 +16,7 @@ contract SupplyChain{
     ISeedlingCompany seed_company;
     ITransaction trans_FM;
     ITransaction trans_SF;
+    IMarketplace marketplace;
 
 
     constructor(){
@@ -23,71 +25,133 @@ contract SupplyChain{
         farmer = IFarmer(address(new Farmer()));
         manufacturer = IManufacturer(address(new Manufacturer()));
         seed_company = ISeedlingCompany(address(new SeedlingCompany()));
-        trans_FM = ITransaction(address(new Transaction(product_ad)));
-        trans_SF = ITransaction(address(new Transaction(product_ad)));
+        address ad_trans_FM = address(new Transaction(product_ad));
+        address ad_trans_SF = address(new Transaction(product_ad));
+        trans_FM = ITransaction(ad_trans_FM);
+        trans_SF = ITransaction(ad_trans_SF);
+        marketplace = IMarketplace(address(new Marketplace(product_ad, ad_trans_SF, ad_trans_FM)));
     }
 
-    mapping (address => SupplyChainLib.Role) role_users;
+    mapping (string => SupplyChainLib.Role) role_users;
+    
 
-    modifier role_farmer(){
-        require(role_users[msg.sender] == SupplyChainLib.Role.Farmer, "only farmer access");
-        _;
-    }
-    modifier role_seedling_company(){
-        require(role_users[msg.sender] == SupplyChainLib.Role.SeedlingCompany, "only seedling company access");
-        _;
-    }
-    modifier role_manufacturer(){
-        require(role_users[msg.sender] == SupplyChainLib.Role.Manufacturer, "only manufacturer access");
-        _;
-    }
-
-    function create_farmer(string memory id, address ad_farmer) public returns(FarmerInfo memory){
-        role_users[ad_farmer] = SupplyChainLib.Role.Farmer;
-        return farmer.create(id, ad_farmer);
-    }
-
-    function get_list_farmer() public view returns (FarmerInfo[] memory){
-        return farmer.get_list_farmer();
+    function create_actor(string memory id, address ad_actor, SupplyChainLib.Role type_actor) public returns (ActorInfo memory){
+        if (type_actor == SupplyChainLib.Role.SeedlingCompany){
+            role_users[id] = type_actor;
+            return seed_company.create(id, ad_actor);
+        }
+        else if (type_actor == SupplyChainLib.Role.Farmer){
+            role_users[id] = type_actor;
+            return farmer.create(id, ad_actor);
+        }
+        else if (type_actor == SupplyChainLib.Role.Manufacturer){
+            role_users[id] = type_actor;
+            return manufacturer.create(id, ad_actor);
+        }
+        else{
+            revert("type_actor is not exist");
+        }
     }
 
-    function create_seedling_company(string memory id, address ad_company) public returns (CompanyInfo memory){
-        role_users[msg.sender] = SupplyChainLib.Role.SeedlingCompany;
-        return seed_company.create(id, ad_company);
-    }
-
-    function create_manufacturer(string memory id, address ad_man) public returns(ManufacturerInfo memory){
-        return manufacturer.create(id, ad_man);
-    }
-
-    function create_product_seed(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity, 
-                                SupplyChainLib.ProductStatus status, address owner) public role_seedling_company returns (ProductInfo memory){
-        require(product.check_product_is_exist(id), "id product is already exist");                           
-        return product.create(id, product_type, price, quantity, "" , status, owner);
-    }
-
-    function create_product_fruit(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity,string memory trans_detail_id, 
-                                SupplyChainLib.ProductStatus status, address owner) public returns(ProductInfo memory){
+    function create_product(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity,string memory trans_detail_id, 
+                            SupplyChainLib.ProductStatus status, string memory owner) public returns (ProductInfo memory){
         require(product.check_product_is_exist(id), "id product is already exist");
-        return product.create(id, product_type, price, quantity, trans_detail_id, status, owner);
+        if (product_type == SupplyChainLib.ProductType.Seedling){
+            return product.create(id, product_type, price, quantity, "" , status, owner);
+        }
+        else if (product_type == SupplyChainLib.ProductType.Fruit){
+            return product.create(id, product_type, price, quantity, trans_detail_id, status, owner);
+        }
+        else{
+            revert("ProductType is not exist");
+        }
     }
 
-    function create_transaction_SF(string memory id, string memory product_id, uint quantity, address buyer) public returns(InfoTransaction memory){
-        require(role_users[buyer] == SupplyChainLib.Role.Farmer, "only farmer access");
-        require(product.check_product_is_exist(id), "id product is already exist");
-        return trans_SF.create(id, product_id, quantity, buyer);
+
+    function get_list_actor(uint type_actor) public view returns (ActorInfo[] memory){
+        if (type_actor == 0) {
+            return seed_company.get_list_seedling_company();
+        }
+        else if (type_actor ==1 ){
+            return farmer.get_list_farmer();
+        }
+        else if (type_actor ==2){
+            return manufacturer.get_list_manufactuter();
+        }
+        else{
+            revert("type actor not exist");
+        }
     }
 
-    function create_transaction_FM(string memory id, string memory product_id, uint quantity, address buyer) public returns(InfoTransaction memory){
-        require(role_users[buyer] == SupplyChainLib.Role.Farmer, "only farmer access");
-        require(product.check_product_is_exist(id), "id product is already exist");
-        return trans_FM.create(id, product_id, quantity, buyer);
+    function create_transaction(string memory id, string memory product_id, uint quantity, string memory buyer, int type_trans) public returns(InfoTransaction memory){
+        if (type_trans == 0){
+            require(role_users[buyer] == SupplyChainLib.Role.Farmer, "only farmer access");
+            require(product.check_product_is_exist(id), "id product is already exist");
+            return trans_SF.create(id, product_id, quantity, buyer);
+        }
+        else if (type_trans == 1){
+            require(role_users[buyer] == SupplyChainLib.Role.Manufacturer, "only Manufacturer access");
+            require(product.check_product_is_exist(id), "id product is already exist");
+            return trans_FM.create(id, product_id, quantity, buyer);
+        }
+        else{
+            revert("type transaction is not exist");
+        }
+        
+    }
+
+    function seek_an_origin(string memory product_id) 
+        public 
+        view
+        returns (
+            ProductInfo memory, 
+            ActorInfo memory,
+            InfoTransaction memory,
+            ProductInfo memory,
+            ActorInfo memory
+        ) 
+        {
+
+        ProductInfo memory productInfo = product.readOneProduct(product_id);
+
+        if (bytes(productInfo.transaction_id).length == 0) {
+
+            ActorInfo memory seedlingCompany = seed_company.get_seedling_company_by_id(productInfo.owner_id);
+
+            return (
+            productInfo,
+            seedlingCompany,
+            InfoTransaction("", "", 0, 0, ""),
+            ProductInfo("", SupplyChainLib.ProductType.None, 0, 0, 0, 0, "", "", SupplyChainLib.ProductStatus.None ),
+            ActorInfo("", address(0))  
+            );
+
+        } else {
+
+            InfoTransaction memory transaction = trans_SF.get_trans_detail_by_id(productInfo.transaction_id);
+
+            ActorInfo memory farmer1 = farmer.get_farmer_by_id(productInfo.owner_id);
+
+            ProductInfo memory originProductInfo = product.readOneProduct(transaction.product_id);
+
+            ActorInfo memory seedlingCompany = seed_company.get_seedling_company_by_id(originProductInfo.owner_id);
+
+            return (
+            productInfo,
+            farmer1,
+            transaction,
+            originProductInfo,
+            seedlingCompany
+            );
+        
+        }
+
     }
 
     function get_detail_product(string memory id) public view returns(ProductInfo memory){
         return product.readOneProduct(id);
-        
     }
+
     function get_trans_SF_detail_by_id(string memory id) public view returns (InfoTransaction memory) {
         return trans_SF.get_trans_detail_by_id(id);
     }
@@ -96,11 +160,11 @@ contract SupplyChain{
         return trans_SF.get_trans_detail_by_product(product_id);
     }
 
-    function get_trans_SF_history_of_buyer(address buyer) public view returns (InfoTransaction[] memory){
+    function get_trans_SF_history_of_buyer(string memory buyer) public view returns (InfoTransaction[] memory){
         return trans_SF.get_transaction_history_of_buyer(buyer);
     }
 
-    function get_trans_SF_of_buyer_by_product(address buyer, string memory product_id) public view returns(InfoTransaction memory){
+    function get_trans_SF_of_buyer_by_product(string memory buyer, string memory product_id) public view returns(InfoTransaction memory){
         return trans_SF.get_trans_of_buyer_by_product(buyer, product_id);
     }
 
@@ -112,11 +176,11 @@ contract SupplyChain{
         return trans_FM.get_trans_detail_by_product(product_id);
     }
 
-    function get_trans_FM_history_of_buyer(address buyer) public view returns (InfoTransaction[] memory){
+    function get_trans_FM_history_of_buyer(string memory buyer) public view returns (InfoTransaction[] memory){
         return trans_FM.get_transaction_history_of_buyer(buyer);
     }
 
-    function get_trans_FM_of_buyer_by_product(address buyer, string memory product_id) public view returns(InfoTransaction memory){
+    function get_trans_FM_of_buyer_by_product(string memory buyer, string memory product_id) public view returns(InfoTransaction memory){
         return trans_FM.get_trans_of_buyer_by_product(buyer, product_id);
     }
 }
