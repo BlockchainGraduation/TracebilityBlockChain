@@ -2,18 +2,16 @@
 pragma solidity ^0.8.0;
 
 import "./product/Product.sol";
-import "./farmer/Farmer.sol";
-import "./manufacturer/Manufacturer.sol";
-import "./seed/SeedlingCompany.sol";
 import "./transaction/Transaction.sol";
 import "./lib/Structs.sol";
-import "./Marketplace.sol";
+import "./marketplace/Marketplace.sol";
+import "./actor/Actor.sol";
 
 contract SupplyChain{
     IProduct product;
-    IFarmer farmer;
-    IManufacturer manufacturer;
-    ISeedlingCompany seed_company;
+    IActor farmer;
+    IActor manufacturer;
+    IActor seed_company;
     ITransaction trans_FM;
     ITransaction trans_SF;
     IMarketplace marketplace;
@@ -22,9 +20,9 @@ contract SupplyChain{
     constructor(){
         address product_ad = (address(new Product()));
         product = IProduct(product_ad);
-        farmer = IFarmer(address(new Farmer()));
-        manufacturer = IManufacturer(address(new Manufacturer()));
-        seed_company = ISeedlingCompany(address(new SeedlingCompany()));
+        farmer = IActor(address(new Actor()));
+        manufacturer = IActor(address(new Actor()));
+        seed_company = IActor(address(new Actor()));
         address ad_trans_FM = address(new Transaction(product_ad));
         address ad_trans_SF = address(new Transaction(product_ad));
         trans_FM = ITransaction(ad_trans_FM);
@@ -38,15 +36,15 @@ contract SupplyChain{
     function create_actor(string memory id, address ad_actor, SupplyChainLib.Role type_actor) public returns (ActorInfo memory){
         if (type_actor == SupplyChainLib.Role.SeedlingCompany){
             role_users[id] = type_actor;
-            return seed_company.create(id, ad_actor);
+            return seed_company.create(id, ad_actor, type_actor);
         }
         else if (type_actor == SupplyChainLib.Role.Farmer){
             role_users[id] = type_actor;
-            return farmer.create(id, ad_actor);
+            return farmer.create(id, ad_actor, type_actor);
         }
         else if (type_actor == SupplyChainLib.Role.Manufacturer){
             role_users[id] = type_actor;
-            return manufacturer.create(id, ad_actor);
+            return manufacturer.create(id, ad_actor, type_actor);
         }
         else{
             revert("type_actor is not exist");
@@ -70,13 +68,13 @@ contract SupplyChain{
 
     function get_list_actor(uint type_actor) public view returns (ActorInfo[] memory){
         if (type_actor == 0) {
-            return seed_company.get_list_seedling_company();
+            return seed_company.get_list_Actor();
         }
         else if (type_actor ==1 ){
-            return farmer.get_list_farmer();
+            return farmer.get_list_Actor();
         }
         else if (type_actor ==2){
-            return manufacturer.get_list_manufactuter();
+            return manufacturer.get_list_Actor();
         }
         else{
             revert("type actor not exist");
@@ -116,25 +114,25 @@ contract SupplyChain{
 
         if (bytes(productInfo.transaction_id).length == 0) {
 
-            ActorInfo memory seedlingCompany = seed_company.get_seedling_company_by_id(productInfo.owner_id);
+            ActorInfo memory seedlingCompany = seed_company.get_Actor_by_id(productInfo.owner_id);
 
             return (
             productInfo,
             seedlingCompany,
             InfoTransaction("", "", 0, 0, ""),
             ProductInfo("", SupplyChainLib.ProductType.None, 0, 0, 0, 0, "", "", SupplyChainLib.ProductStatus.None ),
-            ActorInfo("", address(0))  
+            ActorInfo("", address(0), SupplyChainLib.Role.SeedlingCompany)  
             );
 
         } else {
 
             InfoTransaction memory transaction = trans_SF.get_trans_detail_by_id(productInfo.transaction_id);
 
-            ActorInfo memory farmer1 = farmer.get_farmer_by_id(productInfo.owner_id);
+            ActorInfo memory farmer1 = farmer.get_Actor_by_id(productInfo.owner_id);
 
             ProductInfo memory originProductInfo = product.readOneProduct(transaction.product_id);
 
-            ActorInfo memory seedlingCompany = seed_company.get_seedling_company_by_id(originProductInfo.owner_id);
+            ActorInfo memory seedlingCompany = seed_company.get_Actor_by_id(originProductInfo.owner_id);
 
             return (
             productInfo,
@@ -146,6 +144,14 @@ contract SupplyChain{
         
         }
 
+    }
+
+    function listing_product(string memory id,string memory product_id, string memory owner,SupplyChainLib.OrderStatus status) public returns(MarketplaceItem memory){
+        return marketplace.create_item_marketplace(id, product_id, owner, status);
+    }
+
+    function buy_product_in_market(string memory id, uint quantity, string memory buyer, string memory id_trans) public returns(InfoTransaction memory){
+        return marketplace.buy_item_marketplace(id, quantity, buyer, id_trans);
     }
 
     function get_detail_product(string memory id) public view returns(ProductInfo memory){

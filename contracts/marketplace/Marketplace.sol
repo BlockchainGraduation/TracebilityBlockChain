@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./lib/Structs.sol";
-import "./lib/SupplyChainLib.sol";
-import "./product/Product.sol";
-import "./transaction/Transaction.sol";
+import "../lib/Structs.sol";
+import "../lib/SupplyChainLib.sol";
+import "../product/Product.sol";
+import "../transaction/Transaction.sol";
 
 interface IMarketplace {
 

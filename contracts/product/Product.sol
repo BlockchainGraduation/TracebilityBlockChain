@@ -6,7 +6,7 @@ import "../lib/SupplyChainLib.sol";
 import "../lib/Structs.sol";
 
 interface IProduct {
-    function create(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity, string memory trans_detail_id, SupplyChainLib.ProductStatus status, address owner) external returns (ProductInfo memory);
+    function create(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity, string memory trans_detail_id, SupplyChainLib.ProductStatus status, string memory owner) external returns (ProductInfo memory);
     function update(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity) external returns (ProductInfo memory );
     function deleteProduct(string memory id) external;
     function readOneProduct(string memory id) external view returns (ProductInfo memory );
@@ -16,17 +16,17 @@ interface IProduct {
 
 contract Product is IProduct{
     mapping(string => ProductInfo) products;
-    mapping (address=> mapping (string => ProductInfo)) products_in_company;
+    mapping (string=> mapping (string => ProductInfo)) products_in_company;
 
     constructor(){
     }
 
-    function create(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity, string memory trans_detail_id, SupplyChainLib.ProductStatus status, address owner) public returns (ProductInfo memory){
+    function create(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity, string memory trans_detail_id, SupplyChainLib.ProductStatus status, string memory owner) public returns (ProductInfo memory){
         
         if (product_type == SupplyChainLib.ProductType.Seedling){
             products[id]=ProductInfo(id, product_type, price, quantity, block.timestamp, block.timestamp, owner, "", status);
         }
-        else if (product_type == SupplyChainLib.ProductType.fruit){
+        else if (product_type == SupplyChainLib.ProductType.Fruit){
             products[id] = ProductInfo(id, product_type, price, quantity, block.timestamp, block.timestamp, owner, trans_detail_id, status);
         }
         else{
@@ -38,7 +38,6 @@ contract Product is IProduct{
     }
 
     function update(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity) public returns (ProductInfo memory ){
-        require(msg.sender == products[id].owner, "can not update");
         products[id].product_type = product_type;
         products[id].price = price;
         products[id].quantity = quantity;
@@ -46,9 +45,9 @@ contract Product is IProduct{
     }
 
     function deleteProduct(string memory id) public {
-        if (products[id].owner != msg.sender) {
-            revert("You don't have permission to delete this product");
-        }
+        // if (products[id].owner != msg.sender) {
+        //     revert("You don't have permission to delete this product");
+        // }
 
         delete products[id];
     }

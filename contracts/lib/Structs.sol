@@ -6,6 +6,7 @@ import "./SupplyChainLib.sol";
 struct ActorInfo{
     string id;
     address owner;
+    SupplyChainLib.Role role;
 }
 
 struct ProductInfo{
