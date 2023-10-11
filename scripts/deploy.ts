@@ -1,17 +1,12 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
-
-  const lockedAmount = ethers.parseEther("0.001");
-
-  const supplychain = await ethers.deployContract("SupplyChain", {
-    // value: lockedAmount,
-  });
-
+  const supplychain = await ethers.deployContract("SupplyChain");
+  
   await supplychain.waitForDeployment();
-
+  console.log("Contract deployed at:", supplychain.getAddress());
+  console.log("target: ", supplychain.target)
+  
 }
 
 // We recommend this pattern to be able to use async/await everywhere

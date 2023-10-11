@@ -24,10 +24,10 @@ contract Transaction is ITransaction{
         product = IProduct(product_address);
     }
 
-    mapping (string => InfoTransaction) internal trans_details;
-    mapping (string => InfoTransaction[]) internal trans_details_of_product;
-    mapping (string => mapping(string => InfoTransaction)) trans_of_buyer;
-    mapping (string => InfoTransaction[]) trans_history_of_buyer;
+    mapping (string => InfoTransaction) public trans_details;
+    mapping (string => InfoTransaction[]) public trans_details_of_product;
+    mapping (string => mapping(string => InfoTransaction)) public trans_of_buyer;
+    mapping (string => InfoTransaction[]) public trans_history_of_buyer;
 
     function create(string memory id, string memory product_id, uint quantity, string memory buyer) public returns (InfoTransaction memory) {
         product.burn(product_id, quantity);

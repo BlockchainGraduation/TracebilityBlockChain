@@ -20,8 +20,8 @@ interface IMarketplace {
 contract Marketplace{
 
 
-    mapping(string => MarketplaceItem) private idToMarketplaceItem;
-    string[] idItems;
+    mapping(string => MarketplaceItem) public idToMarketplaceItem;
+    string[] public idItems;
     IProduct Iproduct;
     ITransaction Itrans_SF;
     ITransaction Itrans_FM;
@@ -40,13 +40,13 @@ contract Marketplace{
     }
 
     function create_item_marketplace_status(string memory id, SupplyChainLib.OrderStatus status) public returns (MarketplaceItem memory){
-        require(bytes(idToMarketplaceItem[id].itemId).length ==0, "item marketpalace is not exist");
+        require(bytes(idToMarketplaceItem[id].itemId).length !=0, "item marketpalace is not exist");
         idToMarketplaceItem[id].status = status;
         return idToMarketplaceItem[id];
     }
 
     function buy_item_marketplace(string memory id, uint quantity, string memory buyer, string memory id_trans) public returns(InfoTransaction memory){
-        require(bytes(idToMarketplaceItem[id].itemId).length ==0, "item marketpalace is not exist");
+        require(bytes(idToMarketplaceItem[id].itemId).length !=0, "item marketpalace is not exist");
         ProductInfo memory p = Iproduct.readOneProduct(idToMarketplaceItem[id].product_id);
         if (p.product_type == SupplyChainLib.ProductType.Seedling){
             return Itrans_SF.create(id_trans, p.product_id, quantity, buyer);

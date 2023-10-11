@@ -15,8 +15,8 @@ interface IProduct {
 }
 
 contract Product is IProduct{
-    mapping(string => ProductInfo) products;
-    mapping (string=> mapping (string => ProductInfo)) products_in_company;
+    mapping(string => ProductInfo) public products;
+    mapping (string=> mapping (string => ProductInfo)) public products_in_company;
 
     constructor(){
     }
@@ -41,6 +41,7 @@ contract Product is IProduct{
         products[id].product_type = product_type;
         products[id].price = price;
         products[id].quantity = quantity;
+        products_in_company[products[id].owner_id][id] = products[id];
         return (products[id]);
     }
 
@@ -60,6 +61,7 @@ contract Product is IProduct{
         require(bytes(products[id].product_id).length != 0, "Product not found");
         require(products[id].quantity>= quantity, "Product quantity is not enough");
         products[id].quantity -= quantity;
+        products_in_company[products[id].owner_id][id] = products[id];
         return (products[id]);
     }
     function check_product_is_exist(string memory id) public view returns(bool){
@@ -68,5 +70,6 @@ contract Product is IProduct{
         }
         return false;
     }
+    
 
 }
