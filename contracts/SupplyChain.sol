@@ -1,175 +1,136 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./product/Product.sol";
 import "./transaction/Transaction.sol";
-import "./lib/Structs.sol";
 import "./marketplace/Marketplace.sol";
-import "./actor/Actor.sol";
+import "./actor/ActorManager.sol";
+import "./product/ProductManager.sol";
+import "./lib/SupplyChainLib.sol";
 
-contract SupplyChain{
-    IProduct product;
-    IActor farmer;
-    IActor manufacturer;
-    IActor seed_company;
-    ITransaction trans_FM;
-    ITransaction trans_SF;
+contract SupplyChain {
+    IProductManager iProduct;
+    IActorManager iActor;
+    ITransaction iTransaction;
     IMarketplace marketplace;
-    mapping (string =>address) public map_address;
 
-
-    constructor(){
-        map_address["product"] = (address(new Product()));
-        map_address["seedCompany"] = address(new Actor());
-        map_address["farmer"] = address(new Actor());
-        map_address["manufacture"] = address(new Actor());
-        map_address["ad_trans_FM"] = address(new Transaction(map_address["product"]));
-        map_address["ad_trans_SF"] = address(new Transaction(map_address["product"]));
-        map_address["marketplace"] = address(new Marketplace(map_address["product"], map_address["ad_trans_SF"], map_address["ad_trans_FM"]));
-
-        product = IProduct(map_address["product"]);
-        farmer = IActor(map_address["farmer"]);
-        manufacturer = IActor(map_address["manufacture"]);
-        seed_company = IActor(map_address["seedCompany"]);
-        trans_FM = ITransaction(map_address["ad_trans_FM"]);
-        trans_SF = ITransaction(map_address["ad_trans_SF"]);
-        marketplace = IMarketplace(map_address["marketplace"]);
-    }
-    mapping (string => SupplyChainLib.Role) role_users;
-    
-
-    function create_actor(string memory id, address ad_actor, SupplyChainLib.Role type_actor) public returns (ActorInfo memory){
-        if (type_actor == SupplyChainLib.Role.SeedlingCompany){
-            require(!seed_company.check_actor_is_exist(id),"id user is already exist");
-            role_users[id] = type_actor;
-            return seed_company.create(id, ad_actor, type_actor);
-        }
-        else if (type_actor == SupplyChainLib.Role.Farmer){
-            require(!farmer.check_actor_is_exist(id),"id user is already exist");
-            role_users[id] = type_actor;
-            return farmer.create(id, ad_actor, type_actor);
-        }
-        else if (type_actor == SupplyChainLib.Role.Manufacturer){
-            require(!manufacturer.check_actor_is_exist(id),"id user is already exist");
-            role_users[id] = type_actor;
-            return manufacturer.create(id, ad_actor, type_actor);
-        }
-        else{
-            revert("type_actor is not exist");
-        }
+    constructor(address ad_actor, address ad_product) {
+        iActor = IActorManager(ad_actor);
+        iProduct = IProductManager(ad_product);
+        iTransaction = ITransaction(new Transaction());
+        marketplace = IMarketplace(new Marketplace());
     }
 
-    function create_product(string memory id, SupplyChainLib.ProductType product_type, uint price, uint quantity,string memory trans_detail_id, 
-                            SupplyChainLib.ProductStatus status, string memory owner) public returns (ProductInfo memory){
-        require(!product.check_product_is_exist(id), "id product is already exist");
-        if (product_type == SupplyChainLib.ProductType.Seedling){
-            require(seed_company.check_actor_is_exist(owner),"id user is not exist");
-            return product.create(id, product_type, price, quantity, "" , status, owner);
-        }
-        else if (product_type == SupplyChainLib.ProductType.Fruit){
-            require(farmer.check_actor_is_exist(owner),"id user is not exist");
-            return product.create(id, product_type, price, quantity, trans_detail_id, status, owner);
-        }
-        else{
-            revert("ProductType is not exist");
-        }
-    }
-
-
-    function get_list_actor(uint type_actor) public view returns (ActorInfo[] memory){
-        if (type_actor == 0) {
-            return seed_company.get_list_Actor();
-        }
-        else if (type_actor ==1 ){
-            return farmer.get_list_Actor();
-        }
-        else if (type_actor ==2){
-            return manufacturer.get_list_Actor();
-        }
-        else{
-            revert("type actor not exist");
-        }
-    }
-
-    function create_transaction(string memory id, string memory product_id, uint quantity, string memory buyer, int type_trans) public returns(InfoTransaction memory){
-        if (type_trans == 0){
-            require(role_users[buyer] == SupplyChainLib.Role.Farmer, "only farmer access");
-            require(product.check_product_is_exist(id), "id product is already exist");
-            return trans_SF.create(id, product_id, quantity, buyer);
-        }
-        else if (type_trans == 1){
-            require(role_users[buyer] == SupplyChainLib.Role.Manufacturer, "only Manufacturer access");
-            require(product.check_product_is_exist(id), "id product is already exist");
-            return trans_FM.create(id, product_id, quantity, buyer);
-        }
-        else{
-            revert("type transaction is not exist");
-        }
-        
-    }
-
-    function seek_an_origin(string memory product_id) 
-        public 
+    function seek_an_origin(
+        string calldata product_id
+    )
+        public
         view
         returns (
-            ProductInfo memory, 
-            ActorInfo memory,
-            InfoTransaction memory,
-            ProductInfo memory,
-            ActorInfo memory
-        ) 
-        {
+            SupplyChainLib.OriginInfo[] memory originInfos
+        )
+    {
+        SupplyChainLib.ProductInfo memory productInfo = iProduct.readOneProduct(product_id);
 
-        ProductInfo memory productInfo = product.readOneProduct(product_id);
-
-        if (bytes(productInfo.transaction_id).length == 0) {
-
-            ActorInfo memory seedlingCompany = seed_company.get_Actor_by_id(productInfo.owner_id);
-
-            return (
-            productInfo,
-            seedlingCompany,
-            InfoTransaction("", "", 0, 0, ""),
-            ProductInfo("", SupplyChainLib.ProductType.None, 0, 0, 0, 0, "", "", SupplyChainLib.ProductStatus.None ),
-            ActorInfo("", address(0), SupplyChainLib.Role.SeedlingCompany)  
+        if (bytes(productInfo.transaction_id).length == 0) { // đây là sản phẩm của seedling company nên không cần truy vấn nữa
+            SupplyChainLib.ActorInfo memory seedlingCompany = iActor.get_Actor_by_id(
+                productInfo.owner_id
             );
-
+            originInfos = new SupplyChainLib.OriginInfo[](1);
+            originInfos[0]= SupplyChainLib.OriginInfo(productInfo, seedlingCompany, SupplyChainLib.InfoTransaction("", "", 0, 0, ""));
         } else {
+            if (productInfo.product_type == SupplyChainLib.ProductType.Farmer ){
+                SupplyChainLib.InfoTransaction memory transaction = iTransaction
+                .get_trans_detail_by_id(productInfo.transaction_id);
 
-            InfoTransaction memory transaction = trans_SF.get_trans_detail_by_id(productInfo.transaction_id);
+                SupplyChainLib.ActorInfo memory farmer1 = iActor.get_Actor_by_id(
+                    productInfo.owner_id
+                );
 
-            ActorInfo memory farmer1 = farmer.get_Actor_by_id(productInfo.owner_id);
+                SupplyChainLib.ProductInfo memory originProductInfo = iProduct.readOneProduct(
+                    transaction.product_id
+                );
 
-            ProductInfo memory originProductInfo = product.readOneProduct(transaction.product_id);
+                SupplyChainLib.ActorInfo memory seedlingCompany = iActor.get_Actor_by_id(
+                    originProductInfo.owner_id
+                );
 
-            ActorInfo memory seedlingCompany = seed_company.get_Actor_by_id(originProductInfo.owner_id);
+                originInfos = new SupplyChainLib.OriginInfo[](2);
+                originInfos[0]= SupplyChainLib.OriginInfo(originProductInfo, seedlingCompany, SupplyChainLib.InfoTransaction("", "", 0, 0, ""));
+                originInfos[1]= SupplyChainLib.OriginInfo(productInfo, farmer1,transaction);
+            }
+            else{
+                // manufacturor
+                SupplyChainLib.InfoTransaction memory transaction = iTransaction
+                .get_trans_detail_by_id(productInfo.transaction_id);
 
-            return (
-            productInfo,
-            farmer1,
-            transaction,
-            originProductInfo,
-            seedlingCompany
-            );
-        
+                SupplyChainLib.ActorInfo memory manufacturor = iActor.get_Actor_by_id(
+                    productInfo.owner_id
+                );
+                // famer
+                SupplyChainLib.ProductInfo memory famerProduct = iProduct.readOneProduct(
+                    transaction.product_id
+                );
+
+                SupplyChainLib.ActorInfo memory farmer = iActor.get_Actor_by_id(
+                    famerProduct.owner_id
+                );
+                SupplyChainLib.InfoTransaction memory transaction_sf = iTransaction
+                .get_trans_detail_by_id(famerProduct.transaction_id);
+
+                // seedling company
+                SupplyChainLib.ProductInfo memory originProductInfo = iProduct.readOneProduct(
+                    transaction_sf.product_id
+                );
+
+                SupplyChainLib.ActorInfo memory seedlingCompany = iActor.get_Actor_by_id(
+                    originProductInfo.owner_id
+                );
+
+                originInfos = new SupplyChainLib.OriginInfo[](3);
+                originInfos[0]= SupplyChainLib.OriginInfo(originProductInfo, seedlingCompany, SupplyChainLib.InfoTransaction("", "", 0, 0, ""));
+                originInfos[1]= SupplyChainLib.OriginInfo(famerProduct, farmer,transaction_sf);
+                originInfos[2]= SupplyChainLib.OriginInfo(productInfo, manufacturor,transaction);
+            }
         }
-
+        return originInfos;
     }
 
-    function listing_product(string memory id,string memory product_id, string memory owner,SupplyChainLib.OrderStatus status) public returns(MarketplaceItem memory){
-        ProductInfo memory p = product.readOneProduct(product_id);
-        if (keccak256(abi.encodePacked(p.owner_id)) != keccak256(abi.encodePacked(owner))){
+    function listing_product(
+        string calldata id,
+        string calldata product_id,
+        string calldata owner
+    ) public returns (SupplyChainLib.MarketplaceItem memory) {
+        SupplyChainLib.ProductInfo memory p = iProduct.readOneProduct(product_id);
+        if (
+            keccak256(abi.encodePacked(p.owner_id)) !=
+            keccak256(abi.encodePacked(owner))
+        ) {
             revert("you not owner");
         }
-        return marketplace.create_item_marketplace(id, product_id, owner, status);
-    }
-
-    function buy_product_in_market(string memory id, uint quantity, string memory buyer, string memory id_trans) public returns(InfoTransaction memory){
-        return marketplace.buy_item_marketplace(id, quantity, buyer, id_trans);
+        return
+            marketplace.create_item_marketplace(id, product_id, owner);
     }
 
 
-    function get_list_item_in_marketplace()public view returns (string[] memory){
+    function get_list_item_in_marketplace()
+        public
+        view
+        returns (string[] memory)
+    {
         return marketplace.get_ids();
     }
+
+    function buy_item_on_marketplace(string calldata product_id, string calldata trans_id, string calldata user_id, uint quantity) public {
+        SupplyChainLib.ProductInfo memory current_product = iProduct.readOneProduct(product_id);
+        require(bytes(current_product.product_id).length>0, "product not found");
+        require(current_product.status == SupplyChainLib.ProductStatus.Puhlish, "product is not puhlish");
+        require(!iActor.check_actor_is_exist(user_id), "User not exsit");
+        iTransaction.create(trans_id, product_id, quantity, user_id);
+        iProduct.burn(product_id, quantity);
+    }
+
+    function get_transaction_by_id(string calldata trans_id) public view returns(SupplyChainLib.InfoTransaction memory){
+        return iTransaction.get_trans_detail_by_id(trans_id);
+    }
+
 }
