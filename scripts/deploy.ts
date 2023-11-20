@@ -1,22 +1,27 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const actorManager = await ethers.deployContract("ActorManager");
 
-  const lockedAmount = ethers.parseEther("0.001");
+  await actorManager.waitForDeployment();
+  console.log("Contract deployed at:", actorManager.getAddress());
+  console.log("target: ", actorManager.target)
 
-  const lock = await ethers.deployContract("SupplyChain", {
-    // value: lockedAmount,
-  });
+  const ad_actor = actorManager.target;
 
-  await lock.waitForDeployment();
+  const productManager = await ethers.deployContract("ProductManager", [ad_actor]);
 
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  );
+  await productManager.waitForDeployment();
+  console.log("Contract deployed at:", productManager.getAddress());
+  console.log("target: ", productManager.target)
+
+  const ad_product = productManager.target;
+
+  const supplyChain = await ethers.deployContract("SupplyChain", [ad_actor, ad_product]);
+
+  await supplyChain.waitForDeployment();
+  console.log("Contract deployed at:", supplyChain.getAddress());
+  console.log("target: ", supplyChain.target)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
