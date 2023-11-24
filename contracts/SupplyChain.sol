@@ -99,7 +99,7 @@ contract SupplyChain {
         string calldata id,
         string calldata product_id,
         string calldata owner
-    ) public returns (SupplyChainLib.MarketplaceItem memory) {
+    ) public{
         SupplyChainLib.ProductInfo memory p = iProduct.readOneProduct(product_id);
         if (
             keccak256(abi.encodePacked(p.owner_id)) !=
@@ -107,8 +107,8 @@ contract SupplyChain {
         ) {
             revert("you not owner");
         }
-        return
-            marketplace.create_item_marketplace(id, product_id, owner);
+        marketplace.create_item_marketplace(id, product_id, owner);
+        iProduct.update_status_product(product_id, SupplyChainLib.ProductStatus.Puhlish);
     }
 
 
@@ -120,13 +120,13 @@ contract SupplyChain {
         return marketplace.get_ids();
     }
 
-    function buy_item_on_marketplace(string calldata product_id, string calldata trans_id, string calldata user_id, uint quantity) public {
+    function buy_item_on_marketplace(string calldata product_id, string calldata trans_id, string calldata user_id, uint quantity, string calldata id_type) public {
         SupplyChainLib.ProductInfo memory current_product = iProduct.readOneProduct(product_id);
         require(bytes(current_product.product_id).length>0, "product not found");
         require(current_product.status == SupplyChainLib.ProductStatus.Puhlish, "product is not puhlish");
         require(!iActor.check_actor_is_exist(user_id), "User not exsit");
+        iProduct.burn(product_id, quantity, id_type);
         iTransaction.create(trans_id, product_id, quantity, user_id);
-        iProduct.burn(product_id, quantity);
     }
 
     function get_transaction_by_id(string calldata trans_id) public view returns(SupplyChainLib.InfoTransaction memory){
