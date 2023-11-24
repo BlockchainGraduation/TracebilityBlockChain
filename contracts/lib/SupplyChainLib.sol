@@ -9,7 +9,8 @@ library SupplyChainLib{
     struct ActorInfo {
         string id;
         address owner;
-        SupplyChainLib.Role role;
+        Role role;
+        string hash_info;
     }
 
     struct GrowUpDetail {
@@ -17,16 +18,21 @@ library SupplyChainLib{
         uint date_update;
     }
 
+    struct CountDetail{
+        uint price;
+        uint quantity;
+    }
+
     struct ProductInfo {
         string product_id;
-        SupplyChainLib.ProductType product_type;
+        ProductType product_type;
         uint price;
         uint quantity;
         uint created_at;
         uint updated_at;
         string owner_id;
         string transaction_id;
-        SupplyChainLib.ProductStatus status;
+        ProductStatus status;
         string hash_info;
     }
 
