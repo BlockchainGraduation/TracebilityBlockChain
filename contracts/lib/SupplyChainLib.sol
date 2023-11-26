@@ -5,12 +5,14 @@ library SupplyChainLib{
     enum ProductType {None, SeedlingCompany, Farmer, Manufacturer}
     enum ProductStatus {None, Private, Puhlish, Closed}
     enum Role {SeedlingCompany, Farmer, Manufacturer}
+    enum TransactionStatus{PENDING, DONE, REJECTED}
 
     struct ActorInfo {
         string id;
         address owner;
         Role role;
         string hash_info;
+        uint balance;
     }
 
     struct GrowUpDetail {
@@ -42,6 +44,7 @@ library SupplyChainLib{
         uint quantity;
         uint created_at;
         string buyer_id;
+        TransactionStatus status;
     }
 
     struct MarketplaceItem {

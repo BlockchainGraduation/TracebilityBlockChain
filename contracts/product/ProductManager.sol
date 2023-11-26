@@ -10,7 +10,7 @@ interface IProductManager {
     function create(string calldata id, SupplyChainLib.ProductType product_type, uint price, uint quantity, string memory trans_detail_id, SupplyChainLib.ProductStatus status, string memory owner, string calldata hash_info) external returns (SupplyChainLib.ProductInfo memory);
     function update(string calldata id, uint price, uint quantity, string calldata hash_info) external returns (SupplyChainLib.ProductInfo memory );
     function readOneProduct(string calldata id) external view returns (SupplyChainLib.ProductInfo memory );
-    function burn(string calldata id, uint quantity, string calldata id_type) external returns(SupplyChainLib.ProductInfo memory);
+    function burn(string calldata id, uint quantity, string calldata id_type) external returns(uint);
     function check_product_is_exist(string calldata id) external view returns(bool);
     function updateGrowUpProduct(string calldata id, string calldata url) external;
     function getGrowUpProduct(string calldata id) external view returns(SupplyChainLib.GrowUpDetail[] memory);
@@ -41,7 +41,7 @@ contract ProductManager is IProductManager{
         return iProduct.readOneProduct(id);
     }
 
-    function burn(string calldata id, uint quantity, string calldata id_type) external returns(SupplyChainLib.ProductInfo memory){
+    function burn(string calldata id, uint quantity, string calldata id_type) external returns(uint){
         return iProduct.burn(id, quantity, id_type);
     }
 
