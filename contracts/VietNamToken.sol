@@ -18,12 +18,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VietNamToken is ERC20, Ownable {
-    constructor() ERC20("VietNamToken", "VNDT") Ownable(0xA2cF9F068cE84Cd51dfF616330a5FA9fD7Bff0A3) {
+contract VietNamToken is ERC20 {
+    constructor() ERC20("VietNamToken", "VNDT"){
         _mint(msg.sender, 1000000 * (10 ** uint256(decimals())));
     }
 
-    function mint(address account, uint256 amount) public onlyOwner {
+    function mint(address account, uint256 amount) public {
         _mint(account, amount * (10 ** uint256(decimals())));
     }
 

@@ -2,51 +2,50 @@
 pragma solidity ^0.8.0;
 
 library SupplyChainLib{
-    enum ProductType {None, SeedlingCompany, Farmer, Manufacturer}
+    enum ProductType {None, Manufacturer, Retailer, EndUser}
     enum ProductStatus {None, Private, Puhlish, Closed}
-    enum Role {SeedlingCompany, Farmer, Manufacturer}
+    enum Role {Manufacturer, Retailer, EndUser}
+    enum TransactionStatus{PENDING, DONE, UNSUCCESSFUL}
 
     struct ActorInfo {
         string id;
         address owner;
-        SupplyChainLib.Role role;
+        Role role;
+        string hash_info;
+        uint balance;
     }
 
-    struct GrowUpDetail {
-        string url;
-        uint date_update;
+    struct CountDetail{
+        uint price;
+        uint quantity;
     }
 
     struct ProductInfo {
         string product_id;
-        SupplyChainLib.ProductType product_type;
+        ProductType product_type;
         uint price;
         uint quantity;
         uint created_at;
         uint updated_at;
         string owner_id;
         string transaction_id;
-        SupplyChainLib.ProductStatus status;
+        ProductStatus status;
         string hash_info;
     }
 
-    struct InfoTransaction {
+    struct TransactionInfo {
         string id;
         string product_id;
         uint quantity;
         uint created_at;
         string buyer_id;
+        TransactionStatus status;
     }
 
-    struct MarketplaceItem {
-        string itemId;
-        string product_id;
-        string owner_id;
-    }
 
     struct OriginInfo {
         ProductInfo productInfo;
         ActorInfo ownerInfo;
-        InfoTransaction transactionInfo;
+        TransactionInfo transactionInfo;
     }
 }
