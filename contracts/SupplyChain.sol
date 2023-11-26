@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "./transaction/Transaction.sol";
-import "./marketplace/Marketplace.sol";
 import "./actor/ActorManager.sol";
 import "./product/ProductManager.sol";
 import "./lib/SupplyChainLib.sol";
@@ -11,13 +10,11 @@ contract SupplyChain {
     IProductManager iProduct;
     IActorManager iActor;
     ITransaction iTransaction;
-    IMarketplace marketplace;
 
     constructor(address ad_actor, address ad_product) {
         iActor = IActorManager(ad_actor);
         iProduct = IProductManager(ad_product);
         iTransaction = ITransaction(new Transaction());
-        marketplace = IMarketplace(new Marketplace());
     }
 
     function seek_an_origin(
@@ -35,7 +32,7 @@ contract SupplyChain {
             originInfos[0] = SupplyChainLib.OriginInfo(
                 productInfo,
                 seedlingCompany,
-                SupplyChainLib.InfoTransaction(
+                SupplyChainLib.TransactionInfo(
                     "",
                     "",
                     0,
@@ -45,8 +42,8 @@ contract SupplyChain {
                 )
             );
         } else {
-            if (productInfo.product_type == SupplyChainLib.ProductType.Farmer) {
-                SupplyChainLib.InfoTransaction memory transaction = iTransaction
+            if (productInfo.product_type == SupplyChainLib.ProductType.Retailer) {
+                SupplyChainLib.TransactionInfo memory transaction = iTransaction
                     .get_trans_detail_by_id(productInfo.transaction_id);
 
                 SupplyChainLib.ActorInfo memory farmer1 = iActor
@@ -62,7 +59,7 @@ contract SupplyChain {
                 originInfos[0] = SupplyChainLib.OriginInfo(
                     originProductInfo,
                     seedlingCompany,
-                    SupplyChainLib.InfoTransaction(
+                    SupplyChainLib.TransactionInfo(
                         "",
                         "",
                         0,
@@ -78,7 +75,7 @@ contract SupplyChain {
                 );
             } else {
                 // manufacturor
-                SupplyChainLib.InfoTransaction memory transaction = iTransaction
+                SupplyChainLib.TransactionInfo memory transaction = iTransaction
                     .get_trans_detail_by_id(productInfo.transaction_id);
 
                 SupplyChainLib.ActorInfo memory manufacturor = iActor
@@ -90,7 +87,7 @@ contract SupplyChain {
                 SupplyChainLib.ActorInfo memory farmer = iActor.get_Actor_by_id(
                     famerProduct.owner_id
                 );
-                SupplyChainLib.InfoTransaction
+                SupplyChainLib.TransactionInfo
                     memory transaction_sf = iTransaction.get_trans_detail_by_id(
                         famerProduct.transaction_id
                     );
@@ -106,7 +103,7 @@ contract SupplyChain {
                 originInfos[0] = SupplyChainLib.OriginInfo(
                     originProductInfo,
                     seedlingCompany,
-                    SupplyChainLib.InfoTransaction(
+                    SupplyChainLib.TransactionInfo(
                         "",
                         "",
                         0,
@@ -131,7 +128,6 @@ contract SupplyChain {
     }
 
     function listing_product(
-        string calldata id,
         string calldata product_id,
         string calldata owner
     ) public {
@@ -144,19 +140,10 @@ contract SupplyChain {
         ) {
             revert("you not owner");
         }
-        marketplace.create_item_marketplace(id, product_id, owner);
         iProduct.update_status_product(
             product_id,
             SupplyChainLib.ProductStatus.Puhlish
         );
-    }
-
-    function get_list_item_in_marketplace()
-        public
-        view
-        returns (string[] memory)
-    {
-        return marketplace.get_ids();
     }
 
     function buy_item_on_marketplace(
@@ -191,7 +178,7 @@ contract SupplyChain {
 
     function get_transaction_by_id(
         string calldata trans_id
-    ) public view returns (SupplyChainLib.InfoTransaction memory) {
+    ) public view returns (SupplyChainLib.TransactionInfo memory) {
         return iTransaction.get_trans_detail_by_id(trans_id);
     }
 

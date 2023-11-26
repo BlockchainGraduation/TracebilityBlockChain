@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 library SupplyChainLib{
-    enum ProductType {None, SeedlingCompany, Farmer, Manufacturer}
+    enum ProductType {None, Manufacturer, Retailer, EndUser}
     enum ProductStatus {None, Private, Puhlish, Closed}
-    enum Role {SeedlingCompany, Farmer, Manufacturer}
-    enum TransactionStatus{PENDING, DONE, REJECTED}
+    enum Role {Manufacturer, Retailer, EndUser}
+    enum TransactionStatus{PENDING, DONE, UNSUCCESSFUL}
 
     struct ActorInfo {
         string id;
@@ -13,11 +13,6 @@ library SupplyChainLib{
         Role role;
         string hash_info;
         uint balance;
-    }
-
-    struct GrowUpDetail {
-        string url;
-        uint date_update;
     }
 
     struct CountDetail{
@@ -38,7 +33,7 @@ library SupplyChainLib{
         string hash_info;
     }
 
-    struct InfoTransaction {
+    struct TransactionInfo {
         string id;
         string product_id;
         uint quantity;
@@ -47,15 +42,10 @@ library SupplyChainLib{
         TransactionStatus status;
     }
 
-    struct MarketplaceItem {
-        string itemId;
-        string product_id;
-        string owner_id;
-    }
 
     struct OriginInfo {
         ProductInfo productInfo;
         ActorInfo ownerInfo;
-        InfoTransaction transactionInfo;
+        TransactionInfo transactionInfo;
     }
 }
