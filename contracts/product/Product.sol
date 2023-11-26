@@ -7,7 +7,7 @@ interface IProduct {
     function create(string calldata id, SupplyChainLib.ProductType product_type, uint price, uint quantity, string calldata trans_detail_id, SupplyChainLib.ProductStatus status, string calldata owner, string calldata hash_info) external returns (SupplyChainLib.ProductInfo memory);
     function update(string calldata id, uint price, uint quantity, string calldata hash_info) external returns (SupplyChainLib.ProductInfo memory );
     function readOneProduct(string calldata id) external view returns (SupplyChainLib.ProductInfo memory );
-    function burn(string calldata id, uint quantity, string calldata id_type) external returns(SupplyChainLib.ProductInfo memory);
+    function burn(string calldata id, uint quantity, string calldata id_type) external returns(uint);
     function update_status_product(string calldata id, SupplyChainLib.ProductStatus status) external;
     function update_price_and_type_of_type(string calldata product_id, string calldata id_type, uint price, uint count) external;
     function create_price_detail_of_type(string calldata product_id, string[] calldata id_type, SupplyChainLib.CountDetail[] calldata price_quantity) external;
@@ -81,7 +81,7 @@ contract Product is IProduct{
         return products[id];
     }
 
-    function burn(string calldata id, uint quantity, string calldata id_type) public returns(SupplyChainLib.ProductInfo memory){
+    function burn(string calldata id, uint quantity, string calldata id_type) public returns(uint){
         require(bytes(products[id].product_id).length != 0, "Product not found");
         require(products[id].quantity>= quantity, "Product quantity is not enough");
         if (bytes(id_type).length > 0){
@@ -91,8 +91,9 @@ contract Product is IProduct{
         products_in_actor[products[id].owner_id][id] = products[id];
         if (bytes(id_type).length > 0){
             count_detail[id][id_type].quantity -= quantity;
+            return count_detail[id][id_type].price;
         }
-        return (products[id]);
+        return products[id].price;
     }
 
 }
